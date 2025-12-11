@@ -20,10 +20,6 @@ Crear una plataforma centralizada para:
 
 El sistema sigue una arquitectura de tres capas: Frontend, Backend y Base de Datos.
 
-```mermaid
-graph TD
-    A[Frontend - React] --> B[Backend API - FastAPI]
-    B --> C[Base de Datos - PostgreSQL]
 
 /
 ├── backend/
