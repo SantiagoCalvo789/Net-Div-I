@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 
 from backend.app.core.db import get_conn
 from backend.app.models.device import Device, DeviceCreate, DeviceUpdate
+from psycopg.errors import UniqueViolation
 
 app = FastAPI(title="Network Device Inventory API")
 
@@ -60,20 +61,24 @@ def get_device(device_id: int):
 
 @app.post("/devices", response_model=Device, status_code=201)
 def create_device(payload: DeviceCreate):
-    with get_conn() as conn:
-        row = conn.execute(
-            """
-            INSERT INTO devices (name, ip_address, device_type, location)
-            VALUES (%s, %s, %s, %s)
-            RETURNING id, name, ip_address, device_type, location
-            """,
-            (
-                payload.name,
-                payload.ip_address,
-                payload.device_type,
-                payload.location,
-            ),
-        ).fetchone()
+    try:
+        with get_conn() as conn:
+            row = conn.execute(
+                """
+                INSERT INTO devices (name, ip_address, device_type, location)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id, name, ip_address, device_type, location
+                """,
+                (
+                    payload.name,
+                    str(payload.ip_address),
+                    payload.device_type,
+                    payload.location,
+                ),
+            ).fetchone()
+    except UniqueViolation:
+        raise HTTPException(status_code=409, detail="ip_address already exists")
+
 
     return Device(
         id=row[0],
